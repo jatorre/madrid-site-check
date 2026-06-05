@@ -1,0 +1,62 @@
+<!doctype html><html lang="es"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Madrid · Datos abiertos — ¿Puedo construir aquí?</title><link rel="stylesheet" href="style.css">
+</head><body>
+<div class="topbar">
+  <span class="wm">Madrid<span class="dot">.</span><span class="sub">Datos abiertos</span></span>
+  <a class="btn cyan" href="app.html">Preguntar →</a>
+</div>
+
+<div class="hero">
+  <div class="kick">Un caso de uso · datos abiertos para decidir</div>
+  <h1>¿Puedo construir<br>en esta parcela?</h1>
+  <p>Pregúntale en lenguaje natural a los datos abiertos de Madrid. Un agente conecta con la
+     <b>federación de catálogos</b> (Comunidad de Madrid y Ayuntamiento), consulta en vivo las capas que
+     deciden la edificabilidad de una parcela —clasificación del suelo, espacios protegidos, riesgos
+     naturales, geología y servicios— y te da una valoración. <b>Cada dato lleva su fuente y su consulta
+     reproducible.</b> Catálogos cloud-native en formato abierto (Apache Iceberg + STAC), sin portal, sin servidor.</p>
+  <div class="pills" id="pills"></div>
+  <p style="margin-top:24px"><a class="btn" href="app.html">Probar — pregunta por una parcela →</a></p>
+</div>
+
+<div class="catwrap">
+  <div class="catbar">
+    <div><h2>La federación</h2><div class="meta" id="meta">cargando…</div></div>
+    <input class="search" id="search" placeholder="Buscar datasets…">
+  </div>
+  <div class="pubs" id="pubs"></div>
+  <h3 class="sec2">Datasets que usa este caso — todos publicados y consultables</h3>
+  <div class="grid" id="grid"></div>
+</div>
+
+<script>
+let DATA=[];
+const STY={iceberg:'background:rgba(22,224,200,.16);color:var(--cyan)',
+           raster:'background:rgba(255,200,87,.16);color:var(--amber)',
+           remote:'background:rgba(3,111,226,.16);color:var(--blue)'};
+fetch('data/catalog.json').then(r=>r.json()).then(d=>{
+  DATA=d.datasets;
+  document.getElementById('meta').innerHTML=`<b style="color:var(--cyan)">${d.publishers.length} catálogos</b> federados en formato cloud-native · <b>${d.total.toLocaleString('es')}</b> datasets publicados y consultables (sin portal, sin convert-on-demand)`;
+  const pp=document.getElementById('pubs');
+  d.publishers.forEach(p=>{
+    const e=document.createElement('div');e.className='pubcard';
+    e.innerHTML=`<div class="pn"><span class="pf">${p.flag}</span>${p.publisher}</div>
+      <div class="pm"><b>${p.n.toLocaleString('es')}</b> datasets · publicado</div>`;pp.appendChild(e);});
+  const pl=document.getElementById('pills');
+  [[d.total.toLocaleString('es'),'datasets federados'],['STAC','índice stac-geoparquet'],
+   ['Iceberg + COG','tablas, ráster y parquet remoto'],['DuckDB','consultado en vivo, anónimo']].forEach(([b,t])=>{
+    const e=document.createElement('div');e.className='pill';e.innerHTML=`<b>${b}</b> ${t}`;pl.appendChild(e);});
+  render('');
+});
+document.getElementById('search').oninput=e=>render(e.target.value.toLowerCase());
+function match(d,q){return !q||((d.id||'')+(d.title||'')+(d.publisher||'')+(d.representation||'')).toLowerCase().includes(q);}
+function render(q){
+  const g=document.getElementById('grid');g.innerHTML='';
+  DATA.filter(d=>match(d,q)).forEach(d=>{
+    const c=document.createElement('div');c.className='card';
+    c.innerHTML=`<div class="id">${d.id}</div><div class="ti">${d.title||''}</div>
+      <div class="pub">${d.flag} ${d.publisher}</div>
+      <div class="row"><span class="tag" style="${STY[d.kind]||''}">${d.representation}</span></div>`;
+    g.appendChild(c);});
+}
+</script></body></html>

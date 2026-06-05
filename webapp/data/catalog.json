@@ -1,0 +1,30 @@
+{
+ "total": 3185,
+ "publishers": [
+  {"publisher": "Comunidad de Madrid · IDEM", "flag": "🟥", "n": 2578},
+  {"publisher": "Ayuntamiento de Madrid · datos abiertos", "flag": "🐻", "n": 527},
+  {"publisher": "Ayuntamiento de Madrid · Geoportal/IDEAM", "flag": "🗺️", "n": 80}
+ ],
+ "datasets": [
+  {"id": "vpla_v_clasificacion_ref_23", "collection": "comunidad-madrid", "title": "Clasificación del suelo (planeamiento refundido)", "publisher": "Comunidad de Madrid · IDEM", "flag": "🟥", "representation": "Iceberg table", "kind": "iceberg"},
+  {"id": "vpla_v_ordenanza_ref_23", "collection": "comunidad-madrid", "title": "Ordenanza y uso predominante", "publisher": "Comunidad de Madrid · IDEM", "flag": "🟥", "representation": "Iceberg table", "kind": "iceberg"},
+  {"id": "idem_v_municipios", "collection": "comunidad-madrid", "title": "Municipios", "publisher": "Comunidad de Madrid · IDEM", "flag": "🟥", "representation": "Iceberg table", "kind": "iceberg"},
+  {"id": "idem_ma_enp", "collection": "comunidad-madrid", "title": "Espacios Naturales Protegidos", "publisher": "Comunidad de Madrid · IDEM", "flag": "🟥", "representation": "Iceberg table", "kind": "iceberg"},
+  {"id": "idem_ma_red_natura_lic_zec", "collection": "comunidad-madrid", "title": "Red Natura 2000 — LIC/ZEC", "publisher": "Comunidad de Madrid · IDEM", "flag": "🟥", "representation": "Iceberg table", "kind": "iceberg"},
+  {"id": "idem_ma_red_natura_zepa", "collection": "comunidad-madrid", "title": "Red Natura 2000 — ZEPA (aves)", "publisher": "Comunidad de Madrid · IDEM", "flag": "🟥", "representation": "Iceberg table", "kind": "iceberg"},
+  {"id": "idem_ma_montes_up", "collection": "comunidad-madrid", "title": "Montes de Utilidad Pública", "publisher": "Comunidad de Madrid · IDEM", "flag": "🟥", "representation": "Iceberg table", "kind": "iceberg"},
+  {"id": "idem_ma_vias_pecuarias", "collection": "comunidad-madrid", "title": "Vías pecuarias", "publisher": "Comunidad de Madrid · IDEM", "flag": "🟥", "representation": "Iceberg table", "kind": "iceberg"},
+  {"id": "peligrosid_2_1", "collection": "comunidad-madrid", "title": "Peligrosidad por avenidas y crecidas", "publisher": "Comunidad de Madrid · IDEM", "flag": "🟥", "representation": "Iceberg table", "kind": "iceberg"},
+  {"id": "peligrosid_4_1", "collection": "comunidad-madrid", "title": "Peligrosidad por sismos", "publisher": "Comunidad de Madrid · IDEM", "flag": "🟥", "representation": "Iceberg table", "kind": "iceberg"},
+  {"id": "peligrosid_5_1", "collection": "comunidad-madrid", "title": "Peligrosidad por movimientos de ladera", "publisher": "Comunidad de Madrid · IDEM", "flag": "🟥", "representation": "Iceberg table", "kind": "iceberg"},
+  {"id": "zonasriesgo_peligrosid_3_1", "collection": "comunidad-madrid", "title": "Peligrosidad de incendio forestal", "publisher": "Comunidad de Madrid · IDEM", "flag": "🟥", "representation": "Cloud-Optimized GeoTIFF", "kind": "raster"},
+  {"id": "idem_ma_litologia_50m", "collection": "comunidad-madrid", "title": "Litología (1:50.000)", "publisher": "Comunidad de Madrid · IDEM", "flag": "🟥", "representation": "Iceberg table", "kind": "iceberg"},
+  {"id": "idem_ma_clasif_suelos_98", "collection": "comunidad-madrid", "title": "Tipo de suelo (Soil Taxonomy)", "publisher": "Comunidad de Madrid · IDEM", "flag": "🟥", "representation": "Iceberg table", "kind": "iceberg"},
+  {"id": "idem_eiel_tramo_carretera_23", "collection": "comunidad-madrid", "title": "EIEL · tramos de carretera", "publisher": "Comunidad de Madrid · IDEM", "flag": "🟥", "representation": "Iceberg table", "kind": "iceberg"},
+  {"id": "idem_eiel_cent_sanitario_23", "collection": "comunidad-madrid", "title": "EIEL · centros sanitarios", "publisher": "Comunidad de Madrid · IDEM", "flag": "🟥", "representation": "Iceberg table", "kind": "iceberg"},
+  {"id": "principales_parques_y_jardines_municipales", "collection": "madrid-opendata", "title": "Parques y jardines municipales", "publisher": "Ayuntamiento de Madrid · datos abiertos", "flag": "🐻", "representation": "Iceberg table", "kind": "iceberg"},
+  {"id": "calidad_del_aire_estaciones_de_control", "collection": "madrid-opendata", "title": "Calidad del aire — estaciones", "publisher": "Ayuntamiento de Madrid · datos abiertos", "flag": "🐻", "representation": "Iceberg table", "kind": "iceberg"},
+  {"id": "contaminacion_acustica_estaciones_de_medida", "collection": "madrid-opendata", "title": "Contaminación acústica — estaciones", "publisher": "Ayuntamiento de Madrid · datos abiertos", "flag": "🐻", "representation": "Iceberg table", "kind": "iceberg"},
+  {"id": "servicio_de_mapas_del_modelo_digital_del_terreno_mdt_20", "collection": "madrid-city", "title": "Modelo Digital del Terreno (MDT)", "publisher": "Ayuntamiento de Madrid · Geoportal/IDEAM", "flag": "🗺️", "representation": "raster service", "kind": "raster"}
+ ]
+}

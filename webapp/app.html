@@ -1,0 +1,117 @@
+<!doctype html><html lang="es"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Madrid · Datos abiertos — Pregunta</title>
+<link rel="stylesheet" href="style.css">
+<script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+<link href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" rel="stylesheet">
+</head><body>
+<div class="app">
+  <div class="chat">
+    <div class="head"><span class="wm">Madrid<span class="dot">.</span><span class="sub">Datos abiertos</span></span>
+      <a href="index.html" style="font-size:12px;color:var(--muted)">← catálogo</a></div>
+    <div class="msgs" id="msgs"></div>
+    <div class="compose">
+      <div class="pace"><b>ritmo</b>
+        <button data-s="1.7">lento</button><button data-s="1" class="on">normal</button><button data-s="0.5">rápido</button></div>
+      <div class="chips" id="chips"></div>
+      <form id="f"><input id="q" autocomplete="off" placeholder="Pregunta sobre una parcela de Madrid…"><button class="btn" type="submit">Preguntar</button></form>
+    </div>
+  </div>
+  <div id="map"></div>
+  <div class="footer-note">Federado sobre los catálogos de datos abiertos de Madrid · <b>consultado en vivo, cada dato con su fuente</b></div>
+</div>
+<script>
+const map=new maplibregl.Map({container:'map',style:'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json',
+  center:[-3.74,40.55],zoom:8.2,attributionControl:false});
+map.addControl(new maplibregl.NavigationControl(),'top-right');
+let SC=null,playing=false,markers=[],callouts=[],SPEED=1,stick=true;
+const msgs=document.getElementById('msgs');
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+const D=ms=>ms*SPEED;
+const md=t=>t.replace(/\*\*(.+?)\*\*/g,'<b>$1</b>');
+msgs.addEventListener('scroll',()=>{stick=msgs.scrollHeight-msgs.scrollTop-msgs.clientHeight<60;});
+const scroll=()=>{if(stick)msgs.scrollTop=msgs.scrollHeight;};
+document.querySelectorAll('.pace button').forEach(b=>b.onclick=()=>{
+  document.querySelectorAll('.pace button').forEach(x=>x.classList.remove('on'));b.classList.add('on');SPEED=parseFloat(b.dataset.s);});
+
+fetch('data/scenario.json').then(r=>r.json()).then(s=>{SC=s;
+  addMsg('agent','**Datos abiertos de Madrid.** Pregúntame sobre una parcela de la Comunidad — edificabilidad, protecciones, riesgos, servicios. Respondo solo desde los catálogos públicos y te enseño cada consulta.');
+  chip(SC.question_hint||'¿Puedo construir en esta parcela?');
+});
+function chip(t){const e=document.createElement('div');e.className='chip';e.textContent=t;
+  e.onclick=()=>{document.getElementById('q').value=t;run(t);};document.getElementById('chips').appendChild(e);}
+document.getElementById('f').onsubmit=e=>{e.preventDefault();const v=document.getElementById('q').value.trim();if(v)run(v);};
+
+function addMsg(role,html){const d=document.createElement('div');d.className='msg '+role;
+  if(role==='agent'){const av=document.createElement('div');av.className='av';av.textContent='◆';d.appendChild(av);}
+  const b=document.createElement('div');b.className='b';b.innerHTML=html;d.appendChild(b);msgs.appendChild(d);scroll();return b;}
+function typing(t){const d=document.createElement('div');d.className='typing';d.id='typing';d.textContent=(t||'pensando')+'…';msgs.appendChild(d);scroll();}
+function untyping(){const t=document.getElementById('typing');if(t)t.remove();}
+async function stream(b,text){const toks=text.split(/(\s+)/);let acc='';
+  for(const t of toks){acc+=t;b.innerHTML=md(acc)+'<span class="cur"></span>';scroll();await sleep(D(t.trim()?42:6));}
+  b.innerHTML=md(acc);scroll();}
+function addStat(el,s){const d=document.createElement('div');d.className='stat';
+  d.innerHTML=`<div class="l">${s.label}</div><div class="v">${s.value}</div><div class="s">◆ ${s.source}</div>`;el.appendChild(d);scroll();}
+
+async function run(userText){
+  if(playing||!SC)return;playing=true;
+  clearMarkers();clearCallouts();document.getElementById('q').value='';document.getElementById('chips').innerHTML='';
+  addMsg('user',md(userText));
+  for(const st of SC.steps){
+    if(st.kind==='user')continue;
+    if(st.kind==='say'){
+      await sleep(D(360));typing('pensando');await sleep(D(820));untyping();
+      const b=addMsg('agent','');await stream(b,st.text);
+      if(st.source_url)b.innerHTML+=` <a class="src" href="${st.source_url}" target="_blank">${st.source_label||'fuente'}</a>`;
+    }else if(st.kind==='tool'){
+      await sleep(D(300));typing('ejecutando consulta');await sleep(D(760));untyping();
+      const tl=renderTool(st);
+      await sleep(D(260));
+      if(st.action)await act(st.action);
+      if(st.callout)addCallout(st.callout);
+      if(st.stat)addStat(tl,st.stat);
+    }else if(st.kind==='assessment'){await sleep(D(700));renderAssess(SC.assessment);}
+  }
+  const c=document.getElementById('chips');c.innerHTML='';chip('↻ Repetir');playing=false;
+}
+
+function toolTag(sql){sql=sql||'';return /ATTACH/i.test(sql)?'conectar':/gdallocationinfo|vsicurl|\.tif/i.test(sql)?'ráster':'consulta';}
+function renderTool(st){const d=document.createElement('div');d.className='tool';
+  const cmd=document.createElement('div');cmd.className='cmd';
+  cmd.innerHTML=`<span style="display:flex;align-items:center;min-width:0"><span class="ttag">${toolTag(st.sql)}</span><span class="lbl">${st.cmd}</span></span>`+(st.sql?'<span class="chev">▾</span>':'');
+  if(st.sql){const pre=document.createElement('pre');pre.className='sql';pre.textContent=st.sql;d.appendChild(cmd);d.appendChild(pre);
+    cmd.onclick=()=>d.classList.toggle('open');}
+  else d.appendChild(cmd);
+  const res=document.createElement('div');res.className='res';res.textContent=st.result;d.appendChild(res);
+  msgs.appendChild(d);scroll();return d;}
+
+function renderAssess(a){if(!a)return;const d=document.createElement('div');d.className='assess';
+  let h=`<div class="vh">Valoración</div><div class="vd" style="color:${a.badge}">${a.verdict}</div>`;
+  a.factors.forEach(f=>h+=`<div class="factor"><span class="d ${f.status}"></span><span class="fl">${f.label}</span><span class="fv">${f.value}</span></div>`);
+  if(a.risk)h+=`<div class="flag">${md(a.risk)}</div>`;if(a.note)h+=`<div class="note">${md(a.note)}</div>`;
+  d.innerHTML=h;msgs.appendChild(d);scroll();}
+
+function clearMarkers(){markers.forEach(m=>m.remove());markers=[];}
+function clearCallouts(){callouts.forEach(m=>m.remove());callouts=[];}
+function dot(color,label,lon,lat){const el=document.createElement('div');
+  el.style.cssText=`width:14px;height:14px;border-radius:50%;background:${color};box-shadow:0 0 0 3px rgba(255,255,255,.85),0 0 12px ${color};position:relative`;
+  if(label){const t=document.createElement('span');
+    t.style.cssText='position:absolute;left:20px;top:50%;transform:translateY(-50%);white-space:nowrap;font:600 11px Inter;color:#fff;background:rgba(5,6,9,.82);padding:2px 7px;border-radius:6px';
+    t.textContent=label;el.appendChild(t);}
+  return new maplibregl.Marker({element:el}).setLngLat([lon,lat]).addTo(map);}
+function addCallout(c){const el=document.createElement('div');el.className='callout '+(c.tone||'cyan');el.textContent=c.text;
+  callouts.push(new maplibregl.Marker({element:el,anchor:'bottom',offset:[0,-7]}).setLngLat([SC.site.lon+(c.dlon||0),SC.site.lat+(c.dlat||0)]).addTo(map));}
+
+async function act(a){
+  if(a.type==='flyto'){map.flyTo({center:a.center,zoom:a.zoom,speed:.7});await sleep(D(1500));}
+  else if(a.type==='marker'){clearMarkers();markers.push(dot('#FF6B6B','Parcela · '+SC.site.name,SC.site.lon,SC.site.lat));}
+  else if(a.type==='layer')addLayer(a.id);
+  await sleep(D(220));
+}
+function addLayer(id){
+  if(map.getSource(id))return;const data=SC.layers&&SC.layers[id];if(!data)return;
+  map.addSource(id,{type:'geojson',data});
+  if(id==='protected'){map.addLayer({id:id+'f',type:'fill',source:id,paint:{'fill-color':'#19E3CB','fill-opacity':.18}});
+    map.addLayer({id,type:'line',source:id,paint:{'line-color':'#19E3CB','line-width':1.6}});}
+}
+</script></body></html>

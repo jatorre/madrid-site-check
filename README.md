@@ -1,53 +1,48 @@
-# ¿Puedo construir aquí? — Madrid plot due-diligence from open data
+# ¿Puedo construir aquí? — ask Madrid's open data, in a conversation
 
-A **useful, get-it-done** tool, not an article: give it a plot (address/coords) and it returns a **sourced
-"plot report"** — land classification, protected areas, natural hazards, geology/soil, and nearest public
-services — answered **live and anonymously** from Madrid's open-data **Portolan catalogs**. Every line carries
-the *catalog · dataset* it came from, so the citizen, developer or technician can verify and re-run it.
+A **Helsinki-style AI-conversation demo**: ask a plain-language question about a plot in Madrid and an
+agent **progressively discovers the open-data catalogs**, queries them **live**, and answers with a
+verdict — *every figure carrying its catalog · dataset · query*. The citizen/developer use case:
+*"I'm thinking of buying this plot to build a house — can I, and what do I have to watch out for?"*
 
-It's the citizen/developer counterpart of the OGC Connect Helsinki site-screening: same federated, provenance-first
-pattern, applied to a real question — *"is this plot buildable, and what do I have to watch out for?"*
+![demo](webapp/preview.png)
 
-## Federated catalogs (all public, anonymous, queried in place)
-| Catalog | Endpoint | Role here |
+**Live demo:** `webapp/` → `index.html` (the federation) + `app.html` (the conversation + map).
+Open `index.html` or serve the folder: `python3 -m http.server -d webapp 8799`.
+
+## How it works
+- **`.claude/skills/sdi/`** — the live agent loop (`SKILL.md`) + the catalog registry (`catalogs.md`):
+  *registry → catalog → dataset → query → assess*. In a live session the agent does the discovery itself.
+- **`webapp/`** — a **precomputed snapshot** of one run (the Manzanares el Real scenario), replayed from
+  `data/scenario.json`, in the same conversation+map UI as the OGC Connect Helsinki demo. Every tool card
+  shows the **real SQL and its real result**.
+- **`tools/site_check.py`** — the engine: address/coords → the full sourced screen (also runs standalone).
+- **`tools/build_scenario.py`** — rebuilds `webapp/data/scenario.json` by running the real queries.
+
+## The federated catalogs (all public, anonymous, cloud-native — queried in place)
+| Catalog | Endpoint | Role |
 |---|---|---|
-| **comunidad-madrid** | `…/carto-portolan-madrid/comunidad-madrid` | the decisive regional layers: planning classification & ordenanza, protected areas (ENP, Natura 2000, montes, vías pecuarias), natural hazards (flood/fire/seismic/landslide/subsidence — vector + raster COGs), geology/soil, EIEL services. EPSG:25830. |
-| **madrid-opendata** | `…/carto-portolan-madrid/madrid-opendata` | city layers, federated when the plot is **in Madrid municipality** (parks, air-quality & noise stations). EPSG:4326. |
-| **madrid-city** | `…/carto-portolan-madrid/madrid-city` | geoportal/IDEAM cartography (available; mostly base/mobiliario — not decisive for buildability). |
+| 🟥 **comunidad-madrid** (IDEM) | `…/carto-portolan-madrid/comunidad-madrid` | the decisive layers: planning classification & ordenanza, protected areas (ENP, Natura 2000, montes, vías pecuarias), natural hazards (vector levels + COG rasters), geology/soil, EIEL services. EPSG:25830 |
+| 🐻 **madrid-opendata** | `…/carto-portolan-madrid/madrid-opendata` | city layers when the plot is in Madrid municipality (parks, air/noise stations). EPSG:4326 |
+| 🗺️ **madrid-city** (Geoportal/IDEAM) | `…/carto-portolan-madrid/madrid-city` | base cartography (supporting). EPSG:25830 |
 
-Base = `https://storage.googleapis.com/carto-portolan-madrid`.
+Base = `https://storage.googleapis.com/carto-portolan-madrid`. Built as **Portolan** catalogs
+(Apache Iceberg + STAC + COG) in another session; this repo just *uses* them.
 
-## Run
+## The demo scenario (Manzanares el Real) — real data
+**✅ Suelo Urbano (edificable) — pero dentro del Parque Regional de la Cuenca Alta del Manzanares + Natura 2000 (LIC).**
+Riesgos muy bajos; carretera a 31 m, centro sanitario a 424 m. → *Edificable, sujeto a la normativa del parque
+(PORN/PRUG) y a evaluación de Red Natura.* Other plots run via the CLI: `reports/` (Parla ✅, Cercedilla ⛔, Madrid ℹ️ PGOUM).
+
+## Run the screen on any plot
 ```bash
-python3 tools/site_check.py <lat> <lon> "label"   # one plot
-python3 tools/site_check.py --samples             # the 4 demo plots below
+python3 tools/site_check.py <lat> <lon> "etiqueta"     # one plot → sourced report (reports/)
+python3 tools/site_check.py --samples                   # the demo plots
+python3 tools/build_scenario.py                         # rebuild the webapp conversation
 ```
-DuckDB for vectors (point-in-polygon / nearest, native CRS per catalog), GDAL `gdallocationinfo` for the hazard
-COGs. No server, no downloads, no credentials.
 
-## Demo plots (in `reports/`) — a clean four-way contrast
-| Plot | Verdict |
-|---|---|
-| **Parla** (sur metropolitano) | ✅ Suelo URBANO — edificable, sin condicionantes |
-| **Manzanares el Real** | ✅ Suelo URBANO **pero** dentro del Parque Regional + Natura 2000 |
-| **Cercedilla** (sierra) | ⛔ Suelo NO URBANIZABLE protegido — Parque Nacional + Natura 2000 + Monte de U.P. |
-| **Madrid — Malasaña** | ℹ️ rige el PGOUM municipal (clasificación regional no cubre la capital); federa capas de ciudad (parque 307 m, estaciones de aire/ruido) |
-
-## What it checks (each cites its source)
-- **Planeamiento:** municipio · clasificación del suelo (urbano / urbanizable / no urbanizable) · ordenanza y uso predominante.
-- **Espacios protegidos:** ENP · Natura 2000 (LIC/ZEC, ZEPA) · Montes de U.P. y preservados · vías pecuarias (≤50 m) · humedales.
-- **Riesgos naturales:** peligrosidad por avenidas, torrencialidad, rotura de presas, sismos, movimientos de ladera, subsidencia, suelos expansivos (nivel 0–5) + rásters de riesgo (incendio, sísmico, ladera, avenidas).
-- **Geología y suelo:** litología y permeabilidad · tipo de suelo (Soil Taxonomy).
-- **Servicios (EIEL):** distancia a captación de agua, depuradora, carretera, centro de enseñanza, centro sanitario.
-- **Ciudad de Madrid (federado):** parque/jardín municipal, estaciones de calidad del aire y de ruido.
-
-## Honesty / limits
-- **Orientativo — no sustituye la consulta urbanística oficial** del Ayuntamiento / Comunidad.
-- Planning (`vpla_*`) coverage is the regional *refundido*; **Madrid capital is governed by its own PGOUM** (flagged, not classified here).
-- Hazard levels use the source's 0–5 scheme (0 = sin dato). Slope is not yet computed (the landslide hazard layer is the proxy; a DEM would sharpen it).
-
-## Layout
-```
-tools/site_check.py   the screener (layer registry + point-query engine + report generator)
-reports/*.md|json     generated plot reports (each with full provenance)
-```
+## Honest framing
+**Orientativo — no sustituye la consulta urbanística oficial.** Land classification is the regional
+*refundido* (Madrid capital is governed by its **PGOUM**, flagged not classified). Hazards report the
+source's 0–5 level (warn at ≥4). Protected areas don't forbid building but subject it to the park's rules.
+Descriptive, not a permit decision. Every number keeps its catalog · dataset · query.

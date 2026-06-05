@@ -1,0 +1,385 @@
+{
+ "input": {
+  "label": "Madrid — Malasaña (federación con catálogo de ciudad)",
+  "lat": 40.4257,
+  "lon": -3.7038,
+  "x_25830": 440298.3,
+  "y_25830": 4475245.3
+ },
+ "crs": "EPSG:25830",
+ "catalogs": {
+  "comunidad": "https://storage.googleapis.com/carto-portolan-madrid/comunidad-madrid",
+  "city": "https://storage.googleapis.com/carto-portolan-madrid/madrid-city"
+ },
+ "checks": {
+  "municipio": {
+   "key": "municipio",
+   "label": "Municipio",
+   "hit": true,
+   "detail": {
+    "DSMUNICIPIO": "MADRID"
+   },
+   "source": {
+    "catalog": "comunidad-madrid",
+    "dataset": "idem_v_municipios",
+    "check": "contains"
+   }
+  },
+  "clasificacion": {
+   "key": "clasificacion",
+   "label": "Clasificación del suelo (planeamiento)",
+   "hit": false,
+   "detail": {},
+   "source": {
+    "catalog": "comunidad-madrid",
+    "dataset": "vpla_v_clasificacion_ref_23",
+    "check": "contains"
+   }
+  },
+  "ordenanza": {
+   "key": "ordenanza",
+   "label": "Ordenanza / uso predominante",
+   "hit": false,
+   "detail": {},
+   "source": {
+    "catalog": "comunidad-madrid",
+    "dataset": "vpla_v_ordenanza_ref_23",
+    "check": "contains"
+   }
+  },
+  "enp": {
+   "key": "enp",
+   "label": "Espacio Natural Protegido",
+   "hit": false,
+   "detail": {},
+   "source": {
+    "catalog": "comunidad-madrid",
+    "dataset": "idem_ma_enp",
+    "check": "contains"
+   }
+  },
+  "natura_lic": {
+   "key": "natura_lic",
+   "label": "Natura 2000 — LIC/ZEC (hábitats)",
+   "hit": false,
+   "detail": {},
+   "source": {
+    "catalog": "comunidad-madrid",
+    "dataset": "idem_ma_red_natura_lic_zec",
+    "check": "contains"
+   }
+  },
+  "natura_zepa": {
+   "key": "natura_zepa",
+   "label": "Natura 2000 — ZEPA (aves)",
+   "hit": false,
+   "detail": {},
+   "source": {
+    "catalog": "comunidad-madrid",
+    "dataset": "idem_ma_red_natura_zepa",
+    "check": "contains"
+   }
+  },
+  "monte_up": {
+   "key": "monte_up",
+   "label": "Monte de Utilidad Pública",
+   "hit": false,
+   "detail": {},
+   "source": {
+    "catalog": "comunidad-madrid",
+    "dataset": "idem_ma_montes_up",
+    "check": "contains"
+   }
+  },
+  "monte_pres": {
+   "key": "monte_pres",
+   "label": "Monte Preservado (Ley 16/1995)",
+   "hit": false,
+   "detail": {},
+   "source": {
+    "catalog": "comunidad-madrid",
+    "dataset": "idem_ma_montes_preservados",
+    "check": "contains"
+   }
+  },
+  "via_pecuaria": {
+   "key": "via_pecuaria",
+   "label": "Vía pecuaria (≤50 m)",
+   "hit": false,
+   "detail": {},
+   "source": {
+    "catalog": "comunidad-madrid",
+    "dataset": "idem_ma_vias_pecuarias",
+    "check": "within 50m"
+   }
+  },
+  "humedal": {
+   "key": "humedal",
+   "label": "Humedal catalogado",
+   "hit": false,
+   "detail": {},
+   "source": {
+    "catalog": "comunidad-madrid",
+    "dataset": "idem_ma_ceh_humedales",
+    "check": "contains"
+   }
+  },
+  "flood_aven": {
+   "key": "flood_aven",
+   "label": "Peligrosidad por avenidas y crecidas",
+   "hit": true,
+   "detail": {
+    "PELIGROSID": 0
+   },
+   "source": {
+    "catalog": "comunidad-madrid",
+    "dataset": "peligrosid_2_1",
+    "check": "contains"
+   }
+  },
+  "flood_torr": {
+   "key": "flood_torr",
+   "label": "Peligrosidad por torrencialidad en cauces",
+   "hit": true,
+   "detail": {
+    "PELIGROSID": 0
+   },
+   "source": {
+    "catalog": "comunidad-madrid",
+    "dataset": "peligrosid_2_2",
+    "check": "contains"
+   }
+  },
+  "presa": {
+   "key": "presa",
+   "label": "Peligrosidad por rotura de presas",
+   "hit": true,
+   "detail": {
+    "PELIGROSID": 0
+   },
+   "source": {
+    "catalog": "comunidad-madrid",
+    "dataset": "peligrosid_2_3",
+    "check": "contains"
+   }
+  },
+  "seismic": {
+   "key": "seismic",
+   "label": "Peligrosidad por sismos",
+   "hit": true,
+   "detail": {
+    "PELIGROSID": 1
+   },
+   "source": {
+    "catalog": "comunidad-madrid",
+    "dataset": "peligrosid_4_1",
+    "check": "contains"
+   }
+  },
+  "landslide": {
+   "key": "landslide",
+   "label": "Peligrosidad por movimientos de ladera",
+   "hit": true,
+   "detail": {
+    "PELIGROSID": 1
+   },
+   "source": {
+    "catalog": "comunidad-madrid",
+    "dataset": "peligrosid_5_1",
+    "check": "contains"
+   }
+  },
+  "subsid": {
+   "key": "subsid",
+   "label": "Peligrosidad por subsidencias",
+   "hit": true,
+   "detail": {
+    "PELIGROSID": 3
+   },
+   "source": {
+    "catalog": "comunidad-madrid",
+    "dataset": "peligrosid_5_4",
+    "check": "contains"
+   }
+  },
+  "expans": {
+   "key": "expans",
+   "label": "Peligrosidad por terrenos expansivos",
+   "hit": true,
+   "detail": {
+    "PELIGROSID": 3
+   },
+   "source": {
+    "catalog": "comunidad-madrid",
+    "dataset": "peligrosid_5_5",
+    "check": "contains"
+   }
+  },
+  "litologia": {
+   "key": "litologia",
+   "label": "Litología",
+   "hit": true,
+   "detail": {
+    "DS_DESCRIPCION": "Arcosas ocres claras",
+    "DS_CLASE": "Sedimentos terciarios neogenos (Sedimentos detriticos)",
+    "DS_PERMEABILIDAD": "Sedimentos detriticos de permeabilidad baja a media (Arcosas, arcillas, arenas arcillosas, etc.)    "
+   },
+   "source": {
+    "catalog": "comunidad-madrid",
+    "dataset": "idem_ma_litologia_50m",
+    "check": "contains"
+   }
+  },
+  "suelo": {
+   "key": "suelo",
+   "label": "Tipo de suelo (Soil Taxonomy)",
+   "hit": true,
+   "detail": {
+    "DS_ORDEN": "URBANO",
+    "DS_GRUPO": "URBANO"
+   },
+   "source": {
+    "catalog": "comunidad-madrid",
+    "dataset": "idem_ma_clasif_suelos_98",
+    "check": "contains"
+   }
+  }
+ },
+ "rasters": [
+  {
+   "key": "r_incendio",
+   "label": "Peligrosidad de incendio forestal",
+   "class": 1,
+   "class_label": "muy baja",
+   "source": {
+    "catalog": "comunidad-madrid",
+    "dataset": "data/cog/zonasriesgo_peligrosid_3_1.tif",
+    "check": "raster sample"
+   }
+  },
+  {
+   "key": "r_sismico",
+   "label": "Riesgo sísmico",
+   "class": 2,
+   "class_label": "baja",
+   "source": {
+    "catalog": "comunidad-madrid",
+    "dataset": "data/cog/zonasriesgo_riesgo_4_1.tif",
+    "check": "raster sample"
+   }
+  },
+  {
+   "key": "r_ladera",
+   "label": "Riesgo por movimientos de ladera",
+   "class": 2,
+   "class_label": "baja",
+   "source": {
+    "catalog": "comunidad-madrid",
+    "dataset": "data/cog/zonasriesgo_riesgo_5_1.tif",
+    "check": "raster sample"
+   }
+  },
+  {
+   "key": "r_avenidas",
+   "label": "Riesgo por avenidas y crecidas",
+   "class": 0,
+   "class_label": "sin dato",
+   "source": {
+    "catalog": "comunidad-madrid",
+    "dataset": "data/cog/zonasriesgo_riesgo_2_1.tif",
+    "check": "raster sample"
+   }
+  }
+ ],
+ "services": [
+  {
+   "key": "agua",
+   "label": "Captación / abastecimiento de agua",
+   "nearest_m": 14660.0,
+   "source": {
+    "catalog": "comunidad-madrid",
+    "dataset": "idem_eiel_captacion_23",
+    "check": "nearest"
+   }
+  },
+  {
+   "key": "depuradora",
+   "label": "Depuradora (saneamiento)",
+   "nearest_m": 14537.0,
+   "source": {
+    "catalog": "comunidad-madrid",
+    "dataset": "idem_eiel_depuradora_23",
+    "check": "nearest"
+   }
+  },
+  {
+   "key": "carretera",
+   "label": "Tramo de carretera",
+   "nearest_m": 14604.0,
+   "source": {
+    "catalog": "comunidad-madrid",
+    "dataset": "idem_eiel_tramo_carretera_23",
+    "check": "nearest"
+   }
+  },
+  {
+   "key": "ensenanza",
+   "label": "Centro de enseñanza",
+   "nearest_m": 14285.0,
+   "source": {
+    "catalog": "comunidad-madrid",
+    "dataset": "idem_eiel_cent_ensenanza_23",
+    "check": "nearest"
+   }
+  },
+  {
+   "key": "sanitario",
+   "label": "Centro sanitario",
+   "nearest_m": 14406.0,
+   "source": {
+    "catalog": "comunidad-madrid",
+    "dataset": "idem_eiel_cent_sanitario_23",
+    "check": "nearest"
+   }
+  }
+ ],
+ "ciudad": [
+  {
+   "key": "od_parque",
+   "label": "Parque/jardín municipal (0 m = dentro)",
+   "nearest_m": 307.0,
+   "source": {
+    "catalog": "madrid-opendata",
+    "dataset": "principales_parques_y_jardines_municipales",
+    "check": "nearest"
+   }
+  },
+  {
+   "key": "od_aire",
+   "label": "Estación de calidad del aire",
+   "nearest_m": 723.0,
+   "source": {
+    "catalog": "madrid-opendata",
+    "dataset": "calidad_del_aire_estaciones_de_control",
+    "check": "nearest"
+   }
+  },
+  {
+   "key": "od_ruido",
+   "label": "Estación de medida de ruido",
+   "nearest_m": 718.0,
+   "source": {
+    "catalog": "madrid-opendata",
+    "dataset": "contaminacion_acustica_estaciones_de_medida",
+    "check": "nearest"
+   }
+  }
+ ],
+ "verdict": {
+  "base": "ℹ️ Municipio de Madrid — rige el planeamiento municipal (PGOUM); la clasificación regional no cubre la capital (consúltese el Geoportal del Ayuntamiento).",
+  "protecciones": [],
+  "peligros_vector": [],
+  "riesgos_altos_raster": [],
+  "resumen": "ℹ️ Municipio de Madrid — rige el planeamiento municipal (PGOUM); la clasificación regional no cubre la capital (consúltese el Geoportal del Ayuntamiento). Sin condicionantes detectados en las capas consultadas."
+ }
+}

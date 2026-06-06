@@ -61,6 +61,11 @@ The point comes in as lon/lat (WGS84). For **comunidad-madrid** (EPSG:25830) tra
 - **City federation** — if the plot is in Madrid municipality, also query **madrid-opendata**
   (EPSG:4326, geom col `geometry`): parks (`principales_parques_y_jardines_municipales`),
   air-quality & noise stations. For metric distance transform both sides to 25830.
+- **Amenities / "lo que hay alrededor" (colegios, comercio, salud, transporte)** — the official catalogs are
+  patchy here (EIEL only small munis; city portal only Madrid). Use **Overture** `places` as a **remote
+  GeoParquet on its own S3** (no copy): bbox-prune + filter `categories.primary`, optionally `ST_Within` a
+  municipio/barrio polygon. This is the uniform, comparable-everywhere amenity layer — ideal for comparing
+  locations. See the `query_hint` in `catalogs.md`.
 
 `tools/site_check.py` runs exactly this screen end-to-end and writes a sourced report.
 

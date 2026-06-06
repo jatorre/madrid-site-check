@@ -47,6 +47,29 @@ decisive for buildability. **CRS: EPSG:25830.** ~80 materialized (of ~1,006 cata
 - **Attach as** `city` · **endpoint** `https://storage.googleapis.com/carto-portolan-madrid/madrid-city`
 - Source: geoportal.madrid.es / IDEAM. Extent: municipio de Madrid.
 
+### 🌍 Overture Maps (global) — POIs/amenities, **remote GeoParquet (no materialization)**
+What the official catalogs *don't* give uniformly: **amenities by location**, comparable everywhere. (Verified
+gap: the regional EIEL only surveys small municipalities — 636 schools, big cities absent; the city portal
+covers only Madrid capital.) Overture already publishes planet-scale **cloud-native GeoParquet on its own
+public S3**, so we **register it remote and query it in place** — nothing is copied into our bucket, same as
+the Helsinki demo. `places` = points of interest with `categories.primary` (school, supermarket, pharmacy,
+hospital, restaurant, park, bus_stop…), `names`, `geometry`, and a `bbox` struct for pruning. **CRS: EPSG:4326.**
+- **No `ATTACH`** — read the GeoParquet directly. Endpoint (pin the latest release; check `aws s3 ls --no-sign-request s3://overturemaps-us-west-2/release/`):
+  `s3://overturemaps-us-west-2/release/2026-05-20.0/theme=places/type=place/*.parquet`
+- **`query_hint` (genuinely tricky access — use it):**
+  ```sql
+  INSTALL httpfs;LOAD httpfs; INSTALL spatial;LOAD spatial;
+  CREATE SECRET ov (TYPE s3, PROVIDER config, REGION 'us-west-2');  -- empty creds = anonymous public read
+  SELECT p.categories.primary cat, count(*) n
+  FROM read_parquet('s3://overturemaps-us-west-2/release/<REL>/theme=places/type=place/*.parquet') p
+  WHERE p.bbox.xmin BETWEEN <minx> AND <maxx> AND p.bbox.ymin BETWEEN <miny> AND <maxy>  -- ALWAYS bbox-prune first
+    AND p.categories.primary IN ('school','supermarket','pharmacy','hospital','restaurant','park')
+  GROUP BY 1;
+  -- precise count per area: join to a polygon (e.g. comunidad-madrid municipio, transformed to 4326):
+  --   ... AND ST_Within(p.geometry, <muni_polygon_4326>)
+  ```
+  The `bbox` prune (on row-group stats) is what makes it fast (~10 s region-wide). Without it, it scans the planet.
+
 ## Adding a source (the direction)
 Stand up an Iceberg endpoint, publish a STAC `catalog.datasets` index so datasets are discoverable
 (theme + semantics + CRS + schema), and add an entry here. No skill code changes — the agent reads

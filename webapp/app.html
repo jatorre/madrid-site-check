@@ -3,6 +3,7 @@
 <title>Madrid · Datos abiertos — Pregunta</title>
 <link rel="stylesheet" href="style.css">
 <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+<script src="https://unpkg.com/pmtiles@3.2.1/dist/pmtiles.js"></script>
 <link href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" rel="stylesheet">
 </head><body>
 <div class="app">
@@ -24,7 +25,20 @@
 const map=new maplibregl.Map({container:'map',style:'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json',
   center:[-3.74,40.55],zoom:8.2,attributionControl:false});
 map.addControl(new maplibregl.NavigationControl(),'top-right');
+try{const _pm=new pmtiles.Protocol();maplibregl.addProtocol('pmtiles',_pm.tile);}catch(e){}
 let SC=null,playing=false,markers=[],callouts=[],SPEED=1,stick=true;
+function addBaseTiles(){
+  if(!SC||!SC.tiles)return;
+  const go=()=>{
+    if(SC.tiles.parcelas&&!map.getSource('cat_parcelas')){
+      map.addSource('cat_parcelas',{type:'vector',url:'pmtiles://'+SC.tiles.parcelas});
+      map.addLayer({id:'cat_parcelas',type:'line','source-layer':'parcelas',source:'cat_parcelas',minzoom:14,paint:{'line-color':'#6f82a8','line-width':0.5,'line-opacity':0.55}});}
+    if(SC.tiles.edificios&&!map.getSource('cat_edificios')){
+      map.addSource('cat_edificios',{type:'vector',url:'pmtiles://'+SC.tiles.edificios});
+      map.addLayer({id:'cat_edificios',type:'fill','source-layer':'edificios',source:'cat_edificios',minzoom:14,paint:{'fill-color':'#9db3da','fill-opacity':0.13,'fill-outline-color':'#9db3da'}});}
+  };
+  if(map.isStyleLoaded())go();else map.on('load',go);
+}
 const msgs=document.getElementById('msgs');
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 const D=ms=>ms*SPEED;
@@ -34,9 +48,9 @@ const scroll=()=>{if(stick)msgs.scrollTop=msgs.scrollHeight;};
 document.querySelectorAll('.pace button').forEach(b=>b.onclick=()=>{
   document.querySelectorAll('.pace button').forEach(x=>x.classList.remove('on'));b.classList.add('on');SPEED=parseFloat(b.dataset.s);});
 
-fetch('data/scenario.json').then(r=>r.json()).then(s=>{SC=s;
-  addMsg('agent','**Datos abiertos de Madrid.** Pregúntame sobre una parcela de la Comunidad — edificabilidad, protecciones, riesgos, servicios. Respondo solo desde los catálogos públicos y te enseño cada consulta.');
-  chip(SC.question_hint||'¿Puedo construir en esta parcela?');
+fetch('data/scenario.json').then(r=>r.json()).then(s=>{SC=s;addBaseTiles();
+  addMsg('agent','**Datos abiertos para comprar casa.** Dame una dirección de Madrid y te digo, solo con datos oficiales abiertos, cómo es la zona: qué tienes a un paseo, riesgos, el propio edificio… y, honestamente, **dónde el dato abierto no llega**. Te enseño cada consulta y su fuente.');
+  chip(SC.question_hint||'¿Cómo es esta dirección para comprar?');
 });
 function chip(t){const e=document.createElement('div');e.className='chip';e.textContent=t;
   e.onclick=()=>{document.getElementById('q').value=t;run(t);};document.getElementById('chips').appendChild(e);}
@@ -70,12 +84,21 @@ async function run(userText){
       if(st.action)await act(st.action);
       if(st.callout)addCallout(st.callout);
       if(st.stat)addStat(tl,st.stat);
+    }else if(st.kind==='coverage'){
+      await sleep(D(360));typing('balance de cobertura');await sleep(D(700));untyping();
+      const b=addMsg('agent','');await stream(b,st.text);await sleep(D(200));renderCoverage(st);
     }else if(st.kind==='assessment'){await sleep(D(700));renderAssess(SC.assessment);}
   }
   const c=document.getElementById('chips');c.innerHTML='';chip('↻ Repetir');playing=false;
 }
 
-function toolTag(sql){sql=sql||'';return /ATTACH/i.test(sql)?'conectar':/gdallocationinfo|vsicurl|\.tif/i.test(sql)?'ráster':'consulta';}
+function toolTag(sql){sql=sql||'';
+  if(/GEOCODE|ISOLINE|carto\./i.test(sql))return'CARTO LDS';
+  if(/overture/i.test(sql))return'Overture';
+  if(/catastro/i.test(sql))return'Catastro';
+  if(/gdallocationinfo|vsicurl|\.tif/i.test(sql))return'ráster';
+  if(/ATTACH/i.test(sql))return'conectar';
+  return'consulta';}
 function renderTool(st){const d=document.createElement('div');d.className='tool';
   const cmd=document.createElement('div');cmd.className='cmd';
   cmd.innerHTML=`<span style="display:flex;align-items:center;min-width:0"><span class="ttag">${toolTag(st.sql)}</span><span class="lbl">${st.cmd}</span></span>`+(st.sql?'<span class="chev">▾</span>':'');
@@ -91,6 +114,14 @@ function renderAssess(a){if(!a)return;const d=document.createElement('div');d.cl
   if(a.risk)h+=`<div class="flag">${md(a.risk)}</div>`;if(a.note)h+=`<div class="note">${md(a.note)}</div>`;
   d.innerHTML=h;msgs.appendChild(d);scroll();}
 
+function renderCoverage(st){const d=document.createElement('div');d.className='assess';
+  let h='<div class="vh">Hasta dónde llega el dato abierto</div><div class="cov">';
+  h+='<div class="covcol"><div class="covh ok">✓ Lo resuelven los datos abiertos</div>';
+  (st.proven||[]).forEach(p=>h+=`<div class="covi"><span class="cd ok"></span>${md(p)}</div>`);
+  h+='</div><div class="covcol"><div class="covh gap">⚠ Donde el dato no llega / debería abrirse</div>';
+  (st.gaps||[]).forEach(g=>h+=`<div class="covi"><span class="cd gap"></span>${md(g)}</div>`);
+  h+='</div></div>';
+  d.innerHTML=h;msgs.appendChild(d);scroll();}
 function clearMarkers(){markers.forEach(m=>m.remove());markers=[];}
 function clearCallouts(){callouts.forEach(m=>m.remove());callouts=[];}
 function dot(color,label,lon,lat){const el=document.createElement('div');
@@ -104,7 +135,7 @@ function addCallout(c){const el=document.createElement('div');el.className='call
 
 async function act(a){
   if(a.type==='flyto'){map.flyTo({center:a.center,zoom:a.zoom,speed:.7});await sleep(D(1500));}
-  else if(a.type==='marker'){clearMarkers();markers.push(dot('#FF6B6B','Parcela · '+SC.site.name,SC.site.lon,SC.site.lat));}
+  else if(a.type==='marker'){clearMarkers();markers.push(dot('#FF6B6B',SC.site.name,SC.site.lon,SC.site.lat));if(SC.layers&&SC.layers.parcel)addLayer('parcel');}
   else if(a.type==='layer')addLayer(a.id);
   await sleep(D(220));
 }
@@ -113,5 +144,8 @@ function addLayer(id){
   map.addSource(id,{type:'geojson',data});
   if(id==='protected'){map.addLayer({id:id+'f',type:'fill',source:id,paint:{'fill-color':'#19E3CB','fill-opacity':.18}});
     map.addLayer({id,type:'line',source:id,paint:{'line-color':'#19E3CB','line-width':1.6}});}
+  else if(id==='isochrone'){map.addLayer({id:id+'f',type:'fill',source:id,paint:{'fill-color':'#4d8bff','fill-opacity':.15}});
+    map.addLayer({id,type:'line',source:id,paint:{'line-color':'#4d8bff','line-width':1.6,'line-dasharray':[2,1.5]}});}
+  else if(id==='parcel'){map.addLayer({id,type:'line',source:id,paint:{'line-color':'#FFC857','line-width':2}});}
 }
 </script></body></html>

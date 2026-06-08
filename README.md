@@ -1,23 +1,32 @@
-# ¿Puedo construir aquí? — ask Madrid's open data, in a conversation
+# Informe de mi dirección — ask Madrid's open data before you buy
 
-A **Helsinki-style AI-conversation demo**: ask a plain-language question about a plot in Madrid and an
-agent **progressively discovers the open-data catalogs**, queries them **live**, and answers with a
-verdict — *every figure carrying its catalog · dataset · query*. The citizen/developer use case:
-*"I'm thinking of buying this plot to build a house — can I, and what do I have to watch out for?"*
+A **Helsinki-style AI-conversation demo**: give a Madrid address and an agent geocodes it, **queries the
+open-data catalogs live**, and tells you what the neighbourhood is like — *every figure carrying its
+catalog · dataset · query*. The citizen use case: *"I'm thinking of buying here — what do the official
+open datasets say about this location?"*
+
+Its distinctive twist: it is **honest about coverage** — it shows where open data delivers **and where it
+falls short or should be opened** (e.g. no air-quality history for the capital; no clean neighbourhood
+time series). That gap map is part of the value.
+
+> Sibling demo *"¿Puedo construir aquí?"* (plot buildability) still lives in `tools/build_scenario.py` /
+> `tools/site_check.py`.
 
 ![demo](webapp/preview.png)
 
 **Live demo:** `webapp/` → `index.html` (the federation) + `app.html` (the conversation + map).
-Open `index.html` or serve the folder: `python3 -m http.server -d webapp 8799`.
+Serve the folder: `python3 -m http.server -d webapp 8799`.
 
-## How it works
-- **`.claude/skills/sdi/`** — the live agent loop (`SKILL.md`) + the catalog registry (`catalogs.md`):
-  *registry → catalog → dataset → query → assess*. In a live session the agent does the discovery itself.
-- **`webapp/`** — a **precomputed snapshot** of one run (the Manzanares el Real scenario), replayed from
-  `data/scenario.json`, in the same conversation+map UI as the OGC Connect Helsinki demo. Every tool card
-  shows the **real SQL and its real result**.
-- **`tools/site_check.py`** — the engine: address/coords → the full sourced screen (also runs standalone).
-- **`tools/build_scenario.py`** — rebuilds `webapp/data/scenario.json` by running the real queries.
+## How it works — prove it live, then script it
+- **`tools/build_address_scenario.py`** — runs the **real** federated queries for one address and writes
+  `webapp/data/scenario.json` (geocode + isochrone via CARTO LDS; suelo/riesgos, amenities, building, ambiente).
+  Every tool card in the demo carries the real SQL + real result; nothing is fabricated. Honest gaps included.
+  Run: `python3 tools/build_address_scenario.py "Calle de Alcalá 100, Madrid"`
+  (needs `.lds.env` with a CARTO LDS API token — gitignored; `carto credentials create token`).
+- **`webapp/`** — the conversation + map UI (MapLibre + **Catastro PMTiles** base, isochrone, parcel),
+  replaying `data/scenario.json`. Same format as the OGC Connect Helsinki demo.
+- **`.claude/skills/sdi/`** — the live agent loop (`SKILL.md`) + catalog registry (`catalogs.md`):
+  *registry → catalog → dataset → query → assess*, so an agent can reproduce the run.
 
 ## The federated catalogs (all public, anonymous, cloud-native — queried in place)
 | Catalog | Endpoint | Role |
@@ -25,9 +34,12 @@ Open `index.html` or serve the folder: `python3 -m http.server -d webapp 8799`.
 | 🟥 **comunidad-madrid** (IDEM) | `…/carto-portolan-madrid/comunidad-madrid` | the decisive layers: planning classification & ordenanza, protected areas (ENP, Natura 2000, montes, vías pecuarias), natural hazards (vector levels + COG rasters), geology/soil, EIEL services. EPSG:25830 |
 | 🐻 **madrid-opendata** | `…/carto-portolan-madrid/madrid-opendata` | city layers when the plot is in Madrid municipality (parks, air/noise stations). EPSG:4326 |
 | 🗺️ **madrid-city** (Geoportal/IDEAM) | `…/carto-portolan-madrid/madrid-city` | base cartography (supporting). EPSG:25830 |
+| 🟫 **catastro-es** (toda España) | `…/catastro-es-portolan` | the building & parcel at the address — uso, año, m² — as GeoParquet v3 + **PMTiles** base layer. EPSG:4326 |
+| 🌍 **Overture** (global, remote) | `s3://overturemaps-us-west-2/.../places` | comparable amenities anywhere (schools, shops, health, food, parks). Queried in place, zero copy |
+| 🧭 **CARTO LDS** | `carto sql query` + Analytics Toolbox | geocoding (address → point) + isochrones ("15 min walk") |
 
-Base = `https://storage.googleapis.com/carto-portolan-madrid`. Built as **Portolan** catalogs
-(Apache Iceberg + STAC + COG) in another session; this repo just *uses* them.
+Base = `https://storage.googleapis.com/carto-portolan-madrid` (+ `catastro-es-portolan`). Built as
+**Portolan** catalogs (Apache Iceberg + STAC + COG + PMTiles) in other sessions; this repo *uses* them.
 
 ## The demo scenario (Manzanares el Real) — real data
 **✅ Suelo Urbano (edificable) — pero dentro del Parque Regional de la Cuenca Alta del Manzanares + Natura 2000 (LIC).**

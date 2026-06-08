@@ -1,6 +1,6 @@
 <!doctype html><html lang="es"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Madrid · Datos abiertos — ¿Puedo construir aquí?</title><link rel="stylesheet" href="style.css">
+<title>Madrid · Datos abiertos — ¿Cómo es esta dirección?</title><link rel="stylesheet" href="style.css">
 </head><body>
 <div class="topbar">
   <span class="wm">Madrid<span class="dot">.</span><span class="sub">Datos abiertos</span></span>
@@ -8,15 +8,16 @@
 </div>
 
 <div class="hero">
-  <div class="kick">Un caso de uso · datos abiertos para decidir</div>
-  <h1>¿Puedo construir<br>en esta parcela?</h1>
-  <p>Pregúntale en lenguaje natural a los datos abiertos de Madrid. Un agente conecta con la
-     <b>federación de catálogos</b> (Comunidad de Madrid y Ayuntamiento), consulta en vivo las capas que
-     deciden la edificabilidad de una parcela —clasificación del suelo, espacios protegidos, riesgos
-     naturales, geología y servicios— y te da una valoración. <b>Cada dato lleva su fuente y su consulta
-     reproducible.</b> Catálogos cloud-native en formato abierto (Apache Iceberg + STAC), sin portal, sin servidor.</p>
+  <div class="kick">Un caso de uso · datos abiertos para comprar casa</div>
+  <h1>Voy a comprar casa.<br>¿Cómo es esta dirección?</h1>
+  <p>Dale una dirección de Madrid. Un agente la geocodifica (<b>CARTO LDS</b>) y consulta en vivo la
+     <b>federación de catálogos abiertos</b> —Comunidad de Madrid, Ayuntamiento, <b>Catastro de España</b> y
+     <b>Overture</b>— para contarte cómo es la zona: qué tienes a 15 min andando, riesgos naturales, el propio
+     edificio… cada cifra con su fuente y su consulta reproducible. Y, sobre todo, es <b>honesto</b>: te enseña
+     también <b>dónde el dato abierto no llega</b> —o dónde debería abrirse más. Cloud-native (Iceberg + STAC +
+     PMTiles + GeoParquet remoto), sin portal, sin servidor.</p>
   <div class="pills" id="pills"></div>
-  <p style="margin-top:24px"><a class="btn" href="app.html">Probar — pregunta por una parcela →</a></p>
+  <p style="margin-top:24px"><a class="btn" href="app.html">Probar — pregunta por una dirección →</a></p>
 </div>
 
 <div class="catwrap">
@@ -43,8 +44,8 @@ fetch('data/catalog.json').then(r=>r.json()).then(d=>{
     e.innerHTML=`<div class="pn"><span class="pf">${p.flag}</span>${p.publisher}</div>
       <div class="pm"><b>${p.n.toLocaleString('es')}</b> datasets · publicado</div>`;pp.appendChild(e);});
   const pl=document.getElementById('pills');
-  [[d.total.toLocaleString('es'),'datasets federados'],['STAC','índice stac-geoparquet'],
-   ['Iceberg + COG','tablas, ráster y parquet remoto'],['DuckDB','consultado en vivo, anónimo']].forEach(([b,t])=>{
+  [[d.total.toLocaleString('es'),'datasets federados'],['Iceberg · COG · PMTiles','tablas, ráster, vector tiles'],
+   ['Overture','POIs remotos, sin copia'],['CARTO LDS','geocoding + isócronas'],['DuckDB','en vivo, anónimo']].forEach(([b,t])=>{
     const e=document.createElement('div');e.className='pill';e.innerHTML=`<b>${b}</b> ${t}`;pl.appendChild(e);});
   render('');
 });

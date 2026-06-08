@@ -116,3 +116,13 @@ a{color:var(--cyan);text-decoration:none}
 .flag:before{content:'⚠  ';font-weight:800}
 .assess .note{margin-top:11px;font-size:11px;color:var(--muted);line-height:1.5;border-top:1px solid rgba(138,160,189,.15);padding-top:10px}
 .assess .note b{color:var(--cyan)}
+/* coverage panel: what open data answers vs gaps */
+.cov{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:8px}
+@media(max-width:520px){.cov{grid-template-columns:1fr}}
+.covcol{min-width:0}
+.covh{font-size:11px;font-weight:700;letter-spacing:.04em;margin-bottom:8px}
+.covh.ok{color:var(--cyan)} .covh.gap{color:var(--amber)}
+.covi{display:flex;gap:8px;font-size:12px;color:var(--muted);line-height:1.4;padding:5px 0;border-top:1px solid rgba(138,160,189,.10)}
+.covi .cd{width:7px;height:7px;border-radius:50%;flex:none;margin-top:5px}
+.cd.ok{background:var(--cyan)} .cd.gap{background:var(--amber)}
+.covi b{color:var(--ink);font-weight:600}

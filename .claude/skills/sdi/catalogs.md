@@ -75,3 +75,27 @@ Stand up an Iceberg endpoint, publish a STAC `catalog.datasets` index so dataset
 (theme + semantics + CRS + schema), and add an entry here. No skill code changes — the agent reads
 this file, attaches the catalog, searches the index, and queries. That's the Portolan idea: SDIs as
 open, self-describing, agent-usable infrastructure.
+
+---
+
+## v3 + "informe de mi dirección" update (verified live)
+
+**Catastro de España — `catastro-es`** · base `https://storage.googleapis.com/catastro-es-portolan`
+- `v3/{edificios,parcelas,direcciones}/data/provincia=NN.parquet` (Hive by provincia, EPSG:4326, geom col `geom`, flat bbox cols `xmin/ymin/xmax/ymax`). Madrid province = `28`.
+- Also **PMTiles** vector tiles at `tiles/{tema}.pmtiles` (range-served) — use as a map base via `pmtiles://`.
+- Building/parcel at a point: `WHERE xmin BETWEEN lon±d AND ... ORDER BY ST_Distance(...) LIMIT 1` → `reference, current_use, year_built, num_dwellings`, parcela `area_m2`.
+
+**CARTO LDS (geocoding + isochrones)** — via `carto sql query carto_dw "<sql>" --json`. The managed AT isn't exposed on the SQL API, so use the **BYOT scalar functions** with an API Access Token (`carto credentials create token --connection carto_dw --source "SELECT 1" --apis sql,lds`; store token in gitignored `.lds.env`, base `https://gcp-us-east1.api.carto.com`):
+```sql
+`carto-un`.carto.GEOCODE(base, token, 'Calle de Alcalá 100, Madrid', 'ES', NULL)        -- → GEOGRAPHY (country = ISO2!)
+`carto-un`.carto.ISOLINE(base, token, <point>, 'walk', 900, 'time', NULL)               -- → polygon (15 min)
+```
+
+**Gotchas confirmed:**
+- DuckDB secrets must be **scoped** when mixing GCS + Overture: `SCOPE 's3://'` (GCS) vs `SCOPE 's3://overturemaps-us-west-2'` (Overture), else GCS secret hijacks the Overture read (404).
+- Overture `geometry` is already a `GEOMETRY` type (not WKB) — use it directly, **not** `ST_GeomFromWKB`.
+- madrid-opendata vector geom col is `geom`; attributes often arrive as a GeoRSS `content` blob (`CAST(content AS VARCHAR)`), not structured fields.
+- EIEL service datasets carry a `_23` suffix (`idem_eiel_cent_sanitario_23`, `idem_eiel_cent_ensenanza_23`, `idem_eiel_parque_23`).
+- Public GCS buckets had **no CORS** → set `GET/HEAD, origin *` so browser/PMTiles work cross-origin.
+
+**Honest coverage (state it in the answer):** air-quality history is materialized only for **2005** and excludes Madrid capital → no "¿respiro mejor que hace 20 años?"; no clean 1985→2025 municipal series; arbolado + concejales-desde-1979 not in the current materialized city set. Show these as gaps — where open data should be opened/maintained.

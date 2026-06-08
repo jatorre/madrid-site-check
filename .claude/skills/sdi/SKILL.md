@@ -81,3 +81,16 @@ The point comes in as lon/lat (WGS84). For **comunidad-madrid** (EPSG:25830) tra
 `webapp/` is a **precomputed snapshot** of one run of this flow (replays the Manzanares el Real
 "¿puedo construir aquí?" scenario from committed `data/*.json`). In a live session, do the
 discovery yourself — that's the point. Rebuild a scenario with `tools/build_scenario.py`.
+
+---
+
+## "Informe de mi dirección" (homebuyer) — reproducible recipe
+
+Goal: a citizen weighing **buying a home** at an address. Entry = **CARTO LDS geocode** → point; then federate:
+1. **Vida alrededor** — `carto.ISOLINE(...,'walk',900,'time')` (15-min area) + **Overture** amenities (≤800 m count + nearest): colegios, super, farmacia, salud, restauración, parques. (Overture remote, bbox-prune first.)
+2. **Tu edificio** — Catastro `edificios`/`parcelas` at the point → uso, año, m² (+ PMTiles base on the map).
+3. **Suelo / riesgos** — comunidad: clasificación (Madrid capital → PGOUM, no regional class), espacios protegidos, peligrosidad 0–5 (vector + COG). Warn only ≥4.
+4. **Ambiente** — nearest ruido / tráfico / aire stations (madrid-opendata). ⚠️ no historical series materialized.
+5. **Coverage map** — END every run with **what open data answered vs the gaps** (be explicit; it's the point of the demo). Don't paper over missing data — name it and say where more open data would help.
+
+Build the scripted demo from a real run: `python3 tools/build_address_scenario.py "<address>"` → `webapp/data/scenario.json`. Every step carries the real SQL + real result; the conversation is authored around them.

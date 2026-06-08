@@ -23,8 +23,9 @@ Serve the folder: `python3 -m http.server -d webapp 8799`.
   Every tool card in the demo carries the real SQL + real result; nothing is fabricated. Honest gaps included.
   Run: `python3 tools/build_address_scenario.py "Calle de Alcalá 100, Madrid"`
   (needs `.lds.env` with a CARTO LDS API token — gitignored; `carto credentials create token`).
-- **`webapp/`** — the conversation + map UI (MapLibre + **Catastro PMTiles** base, isochrone, parcel),
-  replaying `data/scenario.json`. Same format as the OGC Connect Helsinki demo.
+- **`webapp/`** — the conversation + map UI (MapLibre; **Catastro fabric** around the home as GeoJSON,
+  isochrone, parcel + home-building highlight), replaying `data/scenario.json`. Links out to the Catastro
+  viewer, which renders the **national fabric as live MVT** from the same v3 GeoParquet (no PMTiles).
 - **`.claude/skills/sdi/`** — the live agent loop (`SKILL.md`) + catalog registry (`catalogs.md`):
   *registry → catalog → dataset → query → assess*, so an agent can reproduce the run.
 

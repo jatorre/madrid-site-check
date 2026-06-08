@@ -3,7 +3,6 @@
 <title>Madrid · Datos abiertos — Pregunta</title>
 <link rel="stylesheet" href="style.css">
 <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
-<script src="https://unpkg.com/pmtiles@3.2.1/dist/pmtiles.js"></script>
 <link href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" rel="stylesheet">
 </head><body>
 <div class="app">
@@ -25,17 +24,17 @@
 const map=new maplibregl.Map({container:'map',style:'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json',
   center:[-3.74,40.55],zoom:8.2,attributionControl:false});
 map.addControl(new maplibregl.NavigationControl(),'top-right');
-try{const _pm=new pmtiles.Protocol();maplibregl.addProtocol('pmtiles',_pm.tile);}catch(e){}
 let SC=null,playing=false,markers=[],callouts=[],SPEED=1,stick=true;
-function addBaseTiles(){
-  if(!SC||!SC.tiles)return;
-  const go=()=>{
-    if(SC.tiles.parcelas&&!map.getSource('cat_parcelas')){
-      map.addSource('cat_parcelas',{type:'vector',url:'pmtiles://'+SC.tiles.parcelas});
-      map.addLayer({id:'cat_parcelas',type:'line','source-layer':'parcelas',source:'cat_parcelas',minzoom:14,paint:{'line-color':'#6f82a8','line-width':0.5,'line-opacity':0.55}});}
-    if(SC.tiles.edificios&&!map.getSource('cat_edificios')){
-      map.addSource('cat_edificios',{type:'vector',url:'pmtiles://'+SC.tiles.edificios});
-      map.addLayer({id:'cat_edificios',type:'fill','source-layer':'edificios',source:'cat_edificios',minzoom:14,paint:{'fill-color':'#9db3da','fill-opacity':0.13,'fill-outline-color':'#9db3da'}});}
+// Cadastral fabric around the home: the SAME v3 GeoParquet now serves the browser as live MVT
+// (Catastro viewer). Here we embed the local neighbourhood as GeoJSON (no PMTiles).
+function addContextBuildings(){
+  if(!SC||!SC.buildings_url)return;
+  const go=()=>{ if(map.getSource('catfabric'))return;
+    fetch(SC.buildings_url).then(r=>r.json()).then(d=>{
+      if(map.getSource('catfabric'))return;
+      map.addSource('catfabric',{type:'geojson',data:d});
+      map.addLayer({id:'catfabric',type:'fill',source:'catfabric',paint:{'fill-color':'#9db3da','fill-opacity':0.12,'fill-outline-color':'#9db3da'}});
+    }).catch(()=>{});
   };
   if(map.isStyleLoaded())go();else map.on('load',go);
 }
@@ -48,7 +47,7 @@ const scroll=()=>{if(stick)msgs.scrollTop=msgs.scrollHeight;};
 document.querySelectorAll('.pace button').forEach(b=>b.onclick=()=>{
   document.querySelectorAll('.pace button').forEach(x=>x.classList.remove('on'));b.classList.add('on');SPEED=parseFloat(b.dataset.s);});
 
-fetch('data/scenario.json').then(r=>r.json()).then(s=>{SC=s;addBaseTiles();
+fetch('data/scenario.json').then(r=>r.json()).then(s=>{SC=s;addContextBuildings();
   addMsg('agent','**Datos abiertos para comprar casa.** Dame una dirección de Madrid y te digo, solo con datos oficiales abiertos, cómo es la zona: qué tienes a un paseo, riesgos, el propio edificio… y, honestamente, **dónde el dato abierto no llega**. Te enseño cada consulta y su fuente.');
   chip(SC.question_hint||'¿Cómo es esta dirección para comprar?');
 });
@@ -106,6 +105,7 @@ function renderTool(st){const d=document.createElement('div');d.className='tool'
     cmd.onclick=()=>d.classList.toggle('open');}
   else d.appendChild(cmd);
   const res=document.createElement('div');res.className='res';res.textContent=st.result;d.appendChild(res);
+  if(st.link){const a=document.createElement('a');a.className='src';a.href=st.link.href;a.target='_blank';a.textContent='◆ '+st.link.text;d.appendChild(a);}
   msgs.appendChild(d);scroll();return d;}
 
 function renderAssess(a){if(!a)return;const d=document.createElement('div');d.className='assess';
@@ -135,7 +135,7 @@ function addCallout(c){const el=document.createElement('div');el.className='call
 
 async function act(a){
   if(a.type==='flyto'){map.flyTo({center:a.center,zoom:a.zoom,speed:.7});await sleep(D(1500));}
-  else if(a.type==='marker'){clearMarkers();markers.push(dot('#FF6B6B',SC.site.name,SC.site.lon,SC.site.lat));if(SC.layers&&SC.layers.parcel)addLayer('parcel');}
+  else if(a.type==='marker'){clearMarkers();markers.push(dot('#FF6B6B',SC.site.name,SC.site.lon,SC.site.lat));if(SC.layers){if(SC.layers.parcel)addLayer('parcel');if(SC.layers.homebuilding)addLayer('homebuilding');}}
   else if(a.type==='layer')addLayer(a.id);
   await sleep(D(220));
 }
@@ -147,5 +147,7 @@ function addLayer(id){
   else if(id==='isochrone'){map.addLayer({id:id+'f',type:'fill',source:id,paint:{'fill-color':'#4d8bff','fill-opacity':.15}});
     map.addLayer({id,type:'line',source:id,paint:{'line-color':'#4d8bff','line-width':1.6,'line-dasharray':[2,1.5]}});}
   else if(id==='parcel'){map.addLayer({id,type:'line',source:id,paint:{'line-color':'#FFC857','line-width':2}});}
+  else if(id==='homebuilding'){map.addLayer({id:id+'f',type:'fill',source:id,paint:{'fill-color':'#FF6B6B','fill-opacity':.45}});
+    map.addLayer({id,type:'line',source:id,paint:{'line-color':'#FF6B6B','line-width':1.4}});}
 }
 </script></body></html>

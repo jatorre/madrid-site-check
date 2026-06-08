@@ -105,7 +105,7 @@ print(f"  suelo: {muni} · clasif={clasif} · enp={enp} · riesgos s{sismo}/l{la
 
 # ============ 4. TU EDIFICIO (Catastro v3) ============
 ed = duck(f"""SELECT reference, current_use, year_built, num_dwellings,
-  round(ST_Distance(ST_Transform(geom,'EPSG:4326','EPSG:25830'),{PT25})) d
+  round(ST_Distance(ST_Transform(geom,'EPSG:4326','EPSG:25830'),{PT25})) d, ST_AsGeoJSON(geom) g
   FROM read_parquet('{CATE}')
   WHERE xmin BETWEEN {LON}-0.0008 AND {LON}+0.0008 AND ymin BETWEEN {LAT}-0.0008 AND {LAT}+0.0008
   ORDER BY d LIMIT 1""")
@@ -117,9 +117,15 @@ pc = duck(f"""SELECT reference, area_m2, round(ST_Distance(ST_Transform(geom,'EP
 edif = ed[0] if ed else None
 parc = pc[0] if pc else None
 year = (str(edif["year_built"])[:4] if edif and edif.get("year_built") else None)
-_pg = parc.get("g") if parc else None
-parc_geojson = (json.loads(_pg) if isinstance(_pg, str) else _pg) if _pg else None
-print(f"  edificio: use={edif and edif['current_use']} year={year} parcela_m2={parc and parc['area_m2']}", flush=True)
+def asgj(v): return (json.loads(v) if isinstance(v, str) else v) if v else None
+parc_geojson = asgj(parc.get("g") if parc else None)
+edif_geojson = asgj(edif.get("g") if edif else None)
+# neighbour buildings (~250 m) → separate file, the cadastral fabric around the home (no PMTiles needed)
+nb = duck(f"""SELECT ST_AsGeoJSON(geom) g FROM read_parquet('{CATE}')
+  WHERE xmin BETWEEN {LON}-0.0025 AND {LON}+0.0025 AND ymin BETWEEN {LAT}-0.0025 AND {LAT}+0.0025""")
+buildings_fc = {"type": "FeatureCollection", "features": [{"type": "Feature", "geometry": asgj(r["g"])} for r in nb if r.get("g")]}
+(OUT / "buildings.geojson").write_text(json.dumps(buildings_fc))
+print(f"  edificio: use={edif and edif['current_use']} year={year} parcela_m2={parc and parc['area_m2']} · neighbours={len(buildings_fc['features'])}", flush=True)
 
 # ============ 5. VIDA ALREDEDOR (Overture, ≤800 m) ============
 am = duck(f"""WITH p AS (
@@ -171,7 +177,8 @@ steps.append({"kind": "tool",
   "action": {"type": "flyto", "center": [LON, LAT], "zoom": 16},
   "src": "CARTO LDS · geocoding"})
 steps.append({"kind": "tool",
-  "cmd": "tu edificio en el Catastro (toda España, PMTiles + GeoParquet v3)",
+  "cmd": "tu edificio en el Catastro (toda España, GeoParquet v3 — el mismo dato sirve Snowflake, DuckDB y el visor)",
+  "link": {"href": "https://storage.googleapis.com/catastro-es-portolan/web/index.html?ds=edificios", "text": "ver edificios de toda España en el visor del Catastro →"},
   "sql": f"SELECT reference, current_use, year_built, p.area_m2\nFROM catastro.edificios e JOIN catastro.parcelas p USING(reference)\nWHERE ST_Contains(e.geom, ST_Point({LON},{LAT}));",
   "result": (f"edificio {edif['current_use'].split('_')[-1] if edif else '—'}"
              + (f", construido en {year}" if year else "")
@@ -265,13 +272,17 @@ layers = {"isochrone": {"type": "FeatureCollection", "features": [
 if parc_geojson:
     layers["parcel"] = {"type": "FeatureCollection", "features": [
         {"type": "Feature", "properties": {"ref": parc["reference"]}, "geometry": parc_geojson}]}
+if edif_geojson:
+    layers["homebuilding"] = {"type": "FeatureCollection", "features": [
+        {"type": "Feature", "properties": {"ref": edif["reference"]}, "geometry": edif_geojson}]}
 
 scenario = {
   "site": {"lon": LON, "lat": LAT, "name": ADDR, "address": ADDR},
   "question_hint": f"¿Cómo es la zona de {ADDR} para comprar — solo con datos oficiales?",
-  "tiles": {  # Catastro PMTiles base layers
-    "edificios": "https://storage.googleapis.com/catastro-es-portolan/tiles/edificios.pmtiles",
-    "parcelas":  "https://storage.googleapis.com/catastro-es-portolan/tiles/parcelas.pmtiles"},
+  # Catastro fabric around the home, from the same v3 GeoParquet (no PMTiles); the live national
+  # tiler lives at the Catastro viewer (linked below) — here we embed the local context as GeoJSON.
+  "buildings_url": "data/buildings.geojson",
+  "catastro_viewer": "https://storage.googleapis.com/catastro-es-portolan/web/index.html?ds=edificios",
   "steps": steps, "assessment": assessment, "layers": layers,
 }
 (OUT / "scenario.json").write_text(json.dumps(scenario, ensure_ascii=False, indent=1))

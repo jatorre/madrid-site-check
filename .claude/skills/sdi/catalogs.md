@@ -82,7 +82,7 @@ open, self-describing, agent-usable infrastructure.
 
 **Catastro de España — `catastro-es`** · base `https://storage.googleapis.com/catastro-es-portolan`
 - `v3/{edificios,parcelas,direcciones}/data/provincia=NN.parquet` (Hive by provincia, EPSG:4326, geom col `geom`, flat bbox cols `xmin/ymin/xmax/ymax`). Madrid province = `28`.
-- Also **PMTiles** vector tiles at `tiles/{tema}.pmtiles` (range-served) — use as a map base via `pmtiles://`.
+- Map base: **live MVT generated in-browser** (DuckDB-WASM `ST_AsMVT` from the same `v3/{tema}/data/*.parquet`, z≥14, routed by `v3/{tema}/_partitions.parquet`). **No PMTiles** (the old `tiles/*.pmtiles` were removed). For a single-address demo, embed the building + ~250 m of neighbours as GeoJSON.
 - Building/parcel at a point: `WHERE xmin BETWEEN lon±d AND ... ORDER BY ST_Distance(...) LIMIT 1` → `reference, current_use, year_built, num_dwellings`, parcela `area_m2`.
 
 **CARTO LDS (geocoding + isochrones)** — via `carto sql query carto_dw "<sql>" --json`. The managed AT isn't exposed on the SQL API, so use the **BYOT scalar functions** with an API Access Token (`carto credentials create token --connection carto_dw --source "SELECT 1" --apis sql,lds`; store token in gitignored `.lds.env`, base `https://gcp-us-east1.api.carto.com`):
